@@ -1,0 +1,28 @@
+groups:
+  - name: dharan-explorer
+    rules:
+      - alert: SiteDown
+        expr: nginx_up{job="dharan-explorer-nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dharan Explorer web target is down"
+          description: "nginx-exporter has not been able to scrape nginx for over 1 minute."
+
+      - alert: ConnectionSaturation
+        expr: nginx_connections_active{job="dharan-explorer-nginx"} > 800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "nginx active connections nearing worker_connections limit"
+          description: "Active connections have stayed above 800 (limit is 1024/worker) for 5 minutes — consider scaling out replicas."
+
+# Note: ngx_http_stub_status_module (used above) only exposes connection
+# counters, not per-status-code or latency metrics. For 5xx-rate and p95
+# latency alerting, ship the JSON access logs (already written to stdout,
+# see nginx/nginx.conf) to a log pipeline — e.g. Promtail -> Loki, or your
+# platform's log-based metrics/CloudWatch Logs Insights — and alert there.
+# Swapping in an nginx build with the VTS module is the alternative if you
+# want that data natively in Prometheus instead.

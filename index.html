@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dharan Explorer — Your Ultimate Local Guide</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=Noto+Serif+Devanagari:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          serif: ['Fraunces', 'Noto Serif Devanagari', 'serif'],
+          sans: ['Inter', 'Noto Sans Devanagari', 'ui-sans-serif', 'sans-serif'],
+        },
+        colors: {
+          paper: '#FAF8F3',
+          sand: '#F2EFE6',
+          ink: '#22261F',
+          mist: '#6E7266',
+          hairline: '#E3DFD2',
+          moss: '#2F5233',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body { background-color: #FAF8F3; }
+  .rich strong { color: #2F5233; font-weight: 600; }
+
+  /* JS-driven state that a hover/focus utility can't express */
+  .filter-chip.active { background: #22261F; color: #fff; border-color: #22261F; }
+  .mappable { cursor: pointer; }
+  .mappable.is-selected { border-color: #2F5233; box-shadow: 0 0 0 1px #2F5233; }
+
+  /* ===== INTRO OVERLAY ===== */
+  body.intro-lock { overflow: hidden; height: 100%; }
+  #intro-overlay {
+    background: radial-gradient(circle at 50% 35%, #2F5233 0%, #1b2019 55%, #14170F 100%);
+  }
+  #intro-overlay::before {
+    content: '';
+    position: absolute; inset: -20%;
+    background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 60%);
+    animation: introGlow 6s ease-in-out infinite;
+  }
+  @keyframes introGlow {
+    0%, 100% { transform: scale(1) translateY(0); opacity: .7; }
+    50% { transform: scale(1.15) translateY(-2%); opacity: 1; }
+  }
+  .intro-line { opacity: 0; transform: translateY(16px); animation: introRise .8s cubic-bezier(.22,1,.36,1) forwards; }
+  .intro-line-1 { animation-delay: .15s; }
+  .intro-line-2 { animation-delay: .45s; }
+  .intro-line-3 { animation-delay: .7s; }
+  .intro-line-4 { animation-delay: 1.15s; }
+  @keyframes introRise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #intro-overlay.intro-hide { opacity: 0; visibility: hidden; transform: scale(1.03); transition: opacity .7s ease, transform .7s ease, visibility 0s linear .7s; }
+  @media (prefers-reduced-motion: reduce) {
+    #intro-overlay::before { animation: none; }
+    .intro-line { animation-duration: .01s; animation-delay: 0s !important; }
+  }
+
+  /* ===== FIRST-VISIT PANEL ===== */
+  #first-visit-panel.is-open { display: grid; }
+  .fv-card { animation: introRise .5s cubic-bezier(.22,1,.36,1) both; }
+</style>
+</head>
+
+<body class="font-sans text-ink antialiased intro-lock">
+
+  <!-- INTRO WELCOME OVERLAY -->
+  <div id="intro-overlay" class="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden text-paper">
+    <div class="relative px-6 text-center">
+      <p class="intro-line intro-line-1 text-[11px] tracking-[0.3em] text-paper/60" data-i18n="badge">DHARAN • KOSHI PROVINCE • NEPAL</p>
+      <h1 class="intro-line intro-line-2 mt-5 font-serif text-4xl leading-[1.05] sm:text-6xl">
+        <span data-i18n="heroLine1">Welcome to</span>
+      </h1>
+      <h1 class="intro-line intro-line-3 -mt-1 font-serif text-5xl leading-[1.05] text-white sm:text-7xl">
+        <span data-i18n="heroLine2">Dharan.</span>
+      </h1>
+      <button id="intro-enter" class="intro-line intro-line-4 mt-9 rounded-full border border-paper/30 px-7 py-3 text-[12px] font-semibold tracking-wide text-paper transition hover:border-paper hover:bg-paper hover:text-ink">
+        <span data-i18n="introEnter">Enter</span> →
+      </button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-50 border-b border-hairline bg-paper/90 backdrop-blur-md">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
+      <div class="whitespace-nowrap font-serif text-lg font-semibold tracking-tight">
+        Dharan <span class="text-moss">Explorer</span>
+      </div>
+      <nav class="hidden flex-1 items-center justify-center gap-8 text-[13px] text-mist md:flex">
+        <a class="transition hover:text-ink" href="#map-section" data-i18n="navMap">MAP</a>
+        <a class="transition hover:text-ink" href="#places" data-i18n="navPlaces">PLACES</a>
+        <a class="transition hover:text-ink" href="#food" data-i18n="navFood">FOOD</a>
+        <a class="transition hover:text-ink" href="#cafes" data-i18n="navCafes">CAFES</a>
+        <a class="transition hover:text-ink" href="#trips" data-i18n="navTrips">DAY TRIPS</a>
+        <a class="transition hover:text-ink" href="#guide" data-i18n="navGuide">GUIDE</a>
+      </nav>
+      <button id="lang-toggle" onclick="toggleLanguage()" class="shrink-0 whitespace-nowrap rounded-full border border-hairline px-4 py-1.5 text-[11px] font-semibold tracking-wide text-moss transition hover:border-moss">नेपाली</button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="mx-auto max-w-3xl px-6 pb-12 pt-20 text-center">
+    <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-hairline px-4 py-1.5 text-[10px] tracking-[0.2em] text-mist">
+      <span>📍</span><span data-i18n="badge">DHARAN • KOSHI PROVINCE • NEPAL</span>
+    </div>
+    <h1 class="font-serif text-5xl leading-[0.98] tracking-tight sm:text-6xl md:text-7xl">
+      <span data-i18n="heroLine1">Welcome to</span><br>
+      <span class="text-moss" data-i18n="heroLine2">Dharan.</span>
+    </h1>
+    <p class="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-mist" data-i18n="heroDesc">A practical guide to exploring the city — from Vijayapur's historic temples and local food to viewpoints, green trails, cafes, and day trips into the hills.</p>
+    <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <a href="#map-section" class="rounded-md bg-ink px-6 py-3 text-[13px] font-semibold text-white transition hover:bg-moss">
+        <span data-i18n="btnMap">Explore the map</span> →
+      </a>
+      <a href="#guide" class="rounded-md border border-hairline px-6 py-3 text-[13px] font-semibold text-ink transition hover:border-ink" data-i18n="btnGuide">I'm visiting for the first time</a>
+    </div>
+  </section>
+
+  <!-- HERO COVER PHOTO (appears automatically once images/hero-dharan-view.jpg exists) -->
+  <div class="hidden mx-auto max-w-4xl px-6">
+    <img src="images/hero-dharan-view.jpg" alt="View over Dharan and Vijayapur Hill" class="max-h-[420px] w-full rounded-2xl border border-hairline object-cover" onload="revealImage(this)" onerror="this.remove()">
+  </div>
+
+  <!-- QUICK NAV -->
+  <div class="mx-auto grid max-w-4xl grid-cols-2 gap-3 px-6 pb-16 pt-10 md:grid-cols-4">
+    <a href="#places" class="rounded-xl border border-hairline bg-white p-5 text-center transition hover:-translate-y-0.5 hover:border-moss">
+      <div class="mb-2 text-2xl">🗺️</div>
+      <strong class="block text-[13px]" data-i18n="qnPlacesTitle">Places</strong>
+      <small class="mt-1 block text-[11px] text-mist" data-i18n="qnPlacesSub">Where to go</small>
+    </a>
+    <a href="#food" class="rounded-xl border border-hairline bg-white p-5 text-center transition hover:-translate-y-0.5 hover:border-moss">
+      <div class="mb-2 text-2xl">🍜</div>
+      <strong class="block text-[13px]" data-i18n="qnFoodTitle">Food</strong>
+      <small class="mt-1 block text-[11px] text-mist" data-i18n="qnFoodSub">What to try</small>
+    </a>
+    <a href="#trips" class="rounded-xl border border-hairline bg-white p-5 text-center transition hover:-translate-y-0.5 hover:border-moss">
+      <div class="mb-2 text-2xl">🏔️</div>
+      <strong class="block text-[13px]" data-i18n="qnTripsTitle">Day Trips</strong>
+      <small class="mt-1 block text-[11px] text-mist" data-i18n="qnTripsSub">Beyond Dharan</small>
+    </a>
+    <a href="#guide" class="rounded-xl border border-hairline bg-white p-5 text-center transition hover:-translate-y-0.5 hover:border-moss">
+      <div class="mb-2 text-2xl">🎒</div>
+      <strong class="block text-[13px]" data-i18n="qnGuideTitle">First Visit</strong>
+      <small class="mt-1 block text-[11px] text-mist" data-i18n="qnGuideSub">Start here</small>
+    </a>
+  </div>
+
+  <!-- MAP SECTION -->
+  <section class="mx-auto max-w-6xl px-6 py-16 sm:py-20" id="map-section">
+    <div class="mb-10 max-w-lg">
+      <p class="text-[11px] tracking-[0.18em] text-moss" data-i18n="mapEyebrow">EXPLORE THE CITY</p>
+      <h2 class="mt-2 font-serif text-3xl sm:text-4xl" data-i18n="mapHeading">Find your next stop.</h2>
+      <p class="mt-3 text-[13px] text-mist" data-i18n="mapDesc">Explore the live map, or tap a place below to jump straight to it.</p>
+    </div>
+
+    <div class="relative overflow-hidden rounded-2xl border border-hairline">
+      <div id="map-caption" class="pointer-events-none absolute left-4 top-4 z-10 rounded-full border border-hairline bg-paper/90 px-4 py-1.5 text-[11px] font-semibold text-ink shadow-sm backdrop-blur">
+        📍 <span id="map-caption-text" data-i18n="mapCaptionDefault">Dharan Overview</span>
+      </div>
+      <iframe id="google-map-frame" class="h-[450px] w-full sm:h-[560px]" style="border:0" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Map of Dharan" src="https://www.google.com/maps?q=Dharan,Nepal&z=13&output=embed"></iframe>
+    </div>
+
+    <div class="mt-6 flex justify-center">
+      <button id="first-visit-toggle" class="rounded-full bg-moss px-6 py-3 text-[13px] font-semibold text-white transition hover:bg-ink">
+        🧳 <span data-i18n="firstVisitToggle">Visiting for the first time? See top picks</span> →
+      </button>
+    </div>
+
+    <div id="first-visit-panel" class="mt-8 hidden grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
+  </section>
+
+  <!-- PLACES -->
+  <section class="mx-auto max-w-6xl px-6 py-16 sm:py-20" id="places">
+    <div class="mb-8 max-w-lg">
+      <p class="text-[11px] tracking-[0.18em] text-moss" data-i18n="placesEyebrow">PLACES WORTH YOUR TIME</p>
+      <h2 class="mt-2 font-serif text-3xl sm:text-4xl" data-i18n="placesHeading">Start with these.</h2>
+      <p class="mt-3 text-[13px] text-mist" data-i18n="placesDesc">A mix of heritage, culture, viewpoints, and nature.</p>
+    </div>
+
+    <div class="mb-8 flex flex-wrap gap-2">
+      <button class="filter-chip active rounded-full border border-hairline px-4 py-2 text-[12px] font-medium text-mist transition hover:border-ink" data-filter="all" data-i18n="filterAll">All</button>
+      <button class="filter-chip rounded-full border border-hairline px-4 py-2 text-[12px] font-medium text-mist transition hover:border-ink" data-filter="Heritage" data-i18n="filterHeritage">Heritage</button>
+      <button class="filter-chip rounded-full border border-hairline px-4 py-2 text-[12px] font-medium text-mist transition hover:border-ink" data-filter="Nature" data-i18n="filterNature">Nature</button>
+      <button class="filter-chip rounded-full border border-hairline px-4 py-2 text-[12px] font-medium text-mist transition hover:border-ink" data-filter="Landmark" data-i18n="filterLandmark">Landmark</button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+      <article class="place mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-category="Heritage" data-lat="26.8286" data-lng="87.2941" data-name-en="Budha Subba Temple" data-name-ne="बुढासुब्बा मन्दिर">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/budha-subba-temple.jpg" alt="Budha Subba Temple" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="emoji-icon mb-3 text-2xl">🛕</div>
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="place1Type">HERITAGE</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="place1Name">Budha Subba Temple</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="place1Desc">One of Dharan's best-known religious and cultural landmarks, located in the historic Vijayapur area.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Budha+Subba+Temple+Dharan" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="place mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-category="Heritage" data-lat="26.8256" data-lng="87.2921" data-name-en="Dantakali Temple" data-name-ne="दन्तकाली मन्दिर">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/dantakali-temple.jpg" alt="Dantakali Temple" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="emoji-icon mb-3 text-2xl">🔱</div>
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="place2Type">HERITAGE</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="place2Name">Dantakali Temple</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="place2Desc">A major pilgrimage site on Vijayapur Hill. Nepal Tourism Board includes it among Dharan's important pilgrimage attractions.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Dantakali+Temple+Dharan" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="place mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-category="Heritage" data-lat="26.8185" data-lng="87.2845" data-name-en="Pindeshwar Temple" data-name-ne="पिँडेश्वर मन्दिर">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/pindeshwar-temple.jpg" alt="Pindeshwar Temple" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="emoji-icon mb-3 text-2xl">🕉️</div>
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="place3Type">HERITAGE</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="place3Name">Pindeshwar Temple</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="place3Desc">A historic temple close to Dharan Bazaar, known especially for its religious importance during the month of Shrawan.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Pindeshwar+Temple+Dharan" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="place mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-category="Nature" data-lat="26.8230" data-lng="87.2910" data-name-en="Panchakanya Temple" data-name-ne="पञ्चकन्या मन्दिर">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/panchakanya-temple.jpg" alt="Panchakanya Temple" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="emoji-icon mb-3 text-2xl">🌿</div>
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="place4Type">NATURE</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="place4Name">Panchakanya Temple</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="place4Desc">A peaceful temple and green area on Vijayapur Hill. Good for a slower walk away from the busy centre.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Panchakanya+Temple+Dharan" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="place mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-category="Nature" data-lat="26.8450" data-lng="87.2880" data-name-en="Shiva Jatta" data-name-ne="शिव जट्टा">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/shiva-jatta.jpg" alt="Shiva Jatta waterfall" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="emoji-icon mb-3 text-2xl">🌊</div>
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="place5Type">NATURE</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="place5Name">Shiva Jatta</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="place5Desc">A waterfall and nearby temple area north of the city. A good option when you want greenery rather than another urban stop.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Shiva+Jatta+Dharan" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="place mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-category="Landmark" data-lat="26.8124" data-lng="87.2834" data-name-en="Dharan Clock Tower" data-name-ne="धरान घडी टावर">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/dharan-clock-tower.jpg" alt="Dharan Clock Tower" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="emoji-icon mb-3 text-2xl">🕰️</div>
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="place6Type">CITY LANDMARK</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="place6Name">Dharan Clock Tower</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="place6Desc">Right around the Bhanu Chowk area, this is an easy landmark to use when getting your bearings in central Dharan.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Dharan+Clock+Tower" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- FOOD SECTION -->
+  <section class="mx-auto max-w-6xl px-6 py-16 sm:py-20" id="food">
+    <div class="mb-8 max-w-lg">
+      <p class="text-[11px] tracking-[0.18em] text-moss" data-i18n="foodEyebrow">EAT LIKE A LOCAL</p>
+      <h2 class="mt-2 font-serif text-3xl sm:text-4xl" data-i18n="foodHeading">Come hungry.</h2>
+      <p class="mt-3 text-[13px] text-mist" data-i18n="foodDesc">Click any dish below to see top recommended places to eat it in Dharan.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+      <article onclick="showFoodSpots('sekuwa')" class="food group cursor-pointer overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/food-sekuwa.jpg" alt="Sekuwa grilling over charcoal" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <h3 class="font-serif text-lg">🔥 <span data-i18n="food1Title">Sekuwa</span></h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="food1Desc">Charcoal-grilled meat is one of Dharan's signature food experiences. Bagarkot is particularly associated with Dharane-style sekuwa and Rai/Limbu food culture.</p>
+          <span class="mt-4 inline-block rounded-full border border-moss/30 px-3 py-1 text-[11px] font-semibold text-moss" data-i18n="foodTag">SEE WHERE TO EAT →</span>
+        </div>
+      </article>
+
+      <article onclick="showFoodSpots('momo')" class="food group cursor-pointer overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/food-momo.jpg" alt="Plate of momo" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <h3 class="font-serif text-lg">🥟 <span data-i18n="food2Title">Mo:Mo</span></h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="food2Desc">From simple local shops to busy evening food spots, momo is an easy first choice. Try a small plate before committing to a huge food crawl.</p>
+          <span class="mt-4 inline-block rounded-full border border-moss/30 px-3 py-1 text-[11px] font-semibold text-moss" data-i18n="foodTag">SEE WHERE TO EAT →</span>
+        </div>
+      </article>
+
+      <article onclick="showFoodSpots('pork')" class="food group cursor-pointer overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/food-pork.jpg" alt="Local pork dish" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <h3 class="font-serif text-lg">🥩 <span data-i18n="food3Title">Local Pork Dishes</span></h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="food3Desc">Dharan has a strong reputation for pork dishes and local Rai/Limbu-influenced flavours. Ask what the house specialty is instead of ordering blindly.</p>
+          <span class="mt-4 inline-block rounded-full border border-moss/30 px-3 py-1 text-[11px] font-semibold text-moss" data-i18n="foodTag">SEE WHERE TO EAT →</span>
+        </div>
+      </article>
+
+      <article onclick="showFoodSpots('snacks')" class="food group cursor-pointer overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/food-snacks.jpg" alt="Street snacks at a market stall" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <h3 class="font-serif text-lg">🌶️ <span data-i18n="food4Title">Aalu Nimki & Street Snacks</span></h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="food4Desc">If you are exploring in the evening, leave room for smaller snacks. Street food is part of the fun — especially around busy market areas like Bhanu Chowk.</p>
+          <span class="mt-4 inline-block rounded-full border border-moss/30 px-3 py-1 text-[11px] font-semibold text-moss" data-i18n="foodTag">SEE WHERE TO EAT →</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- FOOD RECOMMENDATION MODAL -->
+  <div id="food-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
+    <div class="relative max-h-[76vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-hairline bg-white p-8">
+      <span onclick="closeFoodModal()" class="absolute right-5 top-4 cursor-pointer text-2xl font-semibold text-mist transition hover:text-ink">&times;</span>
+      <h2 id="modal-food-title" class="font-serif text-2xl">Top Places to Eat</h2>
+      <div id="modal-food-list"></div>
+    </div>
+  </div>
+
+  <!-- CAFES -->
+  <section class="mx-auto max-w-6xl px-6 py-16 sm:py-20" id="cafes">
+    <div class="mb-8 max-w-lg">
+      <p class="text-[11px] tracking-[0.18em] text-moss" data-i18n="cafesEyebrow">PLACES TO SIT & CHILL</p>
+      <h2 class="mt-2 font-serif text-3xl sm:text-4xl" data-i18n="cafesHeading">Need a coffee break?</h2>
+      <p class="mt-3 text-[13px] text-mist" data-i18n="cafesDesc">A few current local listings worth checking out around town.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+      <article class="business mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-lat="26.8105" data-lng="87.2810" data-name-en="The Dharan Cafe and Restro" data-name-ne="द धरान क्याफे एन्ड रेस्ट्रो">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/cafe-dharan-cafe-restro.jpg" alt="The Dharan Cafe and Restro" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <h3 class="font-serif text-lg">The Dharan Cafe and Restro</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="cafe1Desc">Sampang Chowk area. Great environment to grab a drink or light meal.</p>
+          <div class="mt-3 text-[11px] text-moss"><span data-i18n="hoursLabel">Listed hours:</span> 08:00–22:00</div>
+          <a href="https://www.google.com/maps/search/?api=1&query=The+Dharan+Cafe+and+Restro" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="business mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-lat="26.8090" data-lng="87.2850" data-name-en="D Cafeteria" data-name-ne="डी क्याफेटेरिया">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/cafe-d-cafeteria.jpg" alt="D Cafeteria" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <h3 class="font-serif text-lg">D Cafeteria</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="cafe2Desc">Durga Chowk / Laxmi Marg area. A popular hangout for coffee and quick snacks.</p>
+          <div class="mt-3 text-[11px] text-moss"><span data-i18n="hoursLabel">Listed hours:</span> 07:00–21:00</div>
+          <a href="https://www.google.com/maps/search/?api=1&query=D+Cafeteria+Dharan" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- DAY TRIPS -->
+  <section class="mx-auto max-w-6xl px-6 py-16 sm:py-20" id="trips">
+    <div class="mb-8 max-w-lg">
+      <p class="text-[11px] tracking-[0.18em] text-moss" data-i18n="tripsEyebrow">DAY TRIPS</p>
+      <h2 class="mt-2 font-serif text-3xl sm:text-4xl" data-i18n="tripsHeading">Beyond Dharan.</h2>
+      <p class="mt-3 text-[13px] text-mist" data-i18n="tripsDesc">Popular nearby hill stations and scenic getaways accessible within a short ride.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+
+      <article class="trip mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-lat="26.8700" data-lng="87.3150" data-name-en="Bhedetar & Charles Tower" data-name-ne="भेडेटार र चार्ल्स टावर">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/trip-bhedetar.jpg" alt="Bhedetar and Charles Tower" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="trip1Label">HILL STATION</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="trip1Name">Bhedetar & Charles Tower</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="trip1Desc">Located ~16 km uphill along the Koshi Highway. Known for cool weather, mist, and panoramic valley views.</p>
+          <ul class="mt-3 space-y-1.5 text-[12px] text-mist">
+            <li data-i18n="trip1Li1">Viewpoint Tower</li>
+            <li data-i18n="trip1Li2">Cool Climate Break</li>
+            <li data-i18n="trip1Li3">Local Food Stalls</li>
+          </ul>
+          <a href="https://www.google.com/maps/search/?api=1&query=Bhedetar+Charles+Tower" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="trip mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-lat="26.8920" data-lng="87.3310" data-name-en="Namaste Waterfalls" data-name-ne="नमस्ते झरना">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/trip-namaste-waterfall.jpg" alt="Namaste Waterfalls" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="trip2Label">WATERFALL</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="trip2Name">Namaste Waterfalls</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="trip2Desc">A scenic cascading waterfall located en route to Bhedetar. Perfect for photography and short nature walks.</p>
+          <ul class="mt-3 space-y-1.5 text-[12px] text-mist">
+            <li data-i18n="trip2Li1">80-meter Drop</li>
+            <li data-i18n="trip2Li2">Shaded Canyon Trail</li>
+            <li data-i18n="trip2Li3">Photo Spots</li>
+          </ul>
+          <a href="https://www.google.com/maps/search/?api=1&query=Namaste+Waterfall+Bhedetar" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+      <article class="trip mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss" data-lat="26.8270" data-lng="87.2930" data-name-en="Namo Buddha / Vijayapur Ridge" data-name-ne="नमो बुद्ध / विजयपुर डाँडा">
+        <div class="hidden aspect-[16/10] overflow-hidden">
+          <img src="images/trip-vijayapur-ridge.jpg" alt="Vijayapur Hill ridge at sunset" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+        </div>
+        <div class="p-6">
+          <div class="text-[10px] tracking-[0.15em] text-moss" data-i18n="trip3Label">PANORAMA</div>
+          <h3 class="mt-1 font-serif text-lg" data-i18n="trip3Name">Namo Buddha / Vijayapur Ridge</h3>
+          <p class="mt-2 text-[13px] leading-relaxed text-mist" data-i18n="trip3Desc">The ridge line surrounding Vijayapur offers sunset views looking across the Terai plain and surrounding hills.</p>
+          <ul class="mt-3 space-y-1.5 text-[12px] text-mist">
+            <li data-i18n="trip3Li1">Scenic Sunset Views</li>
+            <li data-i18n="trip3Li2">Temple Walk Route</li>
+            <li data-i18n="trip3Li3">Peaceful Atmosphere</li>
+          </ul>
+          <a href="https://www.google.com/maps/search/?api=1&query=Vijayapur+Hill+Dharan" target="_blank" class="mt-3 inline-block text-[12px] font-semibold text-moss hover:text-ink" data-i18n="openInMaps">Open in Maps →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- FIRST VISIT GUIDE -->
+  <section class="mx-auto max-w-6xl px-6 py-16 sm:py-24" id="guide">
+    <div class="mb-8 max-w-lg">
+      <p class="text-[11px] tracking-[0.18em] text-moss" data-i18n="guideEyebrow">FIRST VISIT GUIDE</p>
+      <h2 class="mt-2 font-serif text-3xl sm:text-4xl" data-i18n="guideHeading">Start here.</h2>
+      <p class="mt-3 text-[13px] text-mist" data-i18n="guideDesc">Practical tips to make your first trip to Dharan effortless.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+      <article class="guide-card rounded-xl border border-hairline bg-white p-7">
+        <h3 class="font-serif text-lg">🚗 <span data-i18n="guide1Title">Getting Around</span></h3>
+        <p class="rich mt-3 text-[13px] leading-relaxed text-mist" data-i18n="guide1Desc"><strong>Auto Rickshaws (Tuk-tuks)</strong> and local Safa Tempos are the primary way to move inside town. Always agree on the fare before hopping in if non-metered, or use local ride apps if available.</p>
+      </article>
+
+      <article class="guide-card rounded-xl border border-hairline bg-white p-7">
+        <h3 class="font-serif text-lg">☀️ <span data-i18n="guide2Title">Best Time to Explore</span></h3>
+        <p class="rich mt-3 text-[13px] leading-relaxed text-mist" data-i18n="guide2Desc">Head to the <strong>Vijayapur Hill temples</strong> in the cooler morning hours. Save the late afternoon for <strong>Bhanu Chowk market walks</strong> and evening <strong>sekuwa in Bagarkot</strong>.</p>
+      </article>
+
+    </div>
+  </section>
+
+  <footer class="rich mt-10 border-t border-hairline px-6 py-10 text-center text-[11px] leading-relaxed text-mist">
+    <p data-i18n="footerText">Crafted for explorers visiting <strong>Dharan, Nepal</strong>.</p>
+  </footer>
+
+  <script>
+    let selectedPlaceName = null;
+    let firstVisitOpen = false;
+    let currentLang = 'en';
+    try {
+      currentLang = localStorage.getItem('dharan-lang') || 'en';
+    } catch (e) {
+      currentLang = 'en'; // storage blocked (sandboxed preview, private browsing, etc.) — safe fallback
+    }
+    let lastOpenedFoodCategory = null;
+
+    // ===== IMAGE REVEAL HELPER =====
+    // Every photo slot starts with the Tailwind `hidden` class. When (and if) a
+    // real image at images/... loads, we reveal its wrapper and hide the emoji
+    // fallback icon on that card, if it has one. Nothing breaks if the image
+    // never loads — onerror just removes the broken <img>.
+    function revealImage(img) {
+      const wrapper = img.parentElement;
+      wrapper.classList.remove('hidden');
+      const card = wrapper.closest('article, div');
+      const icon = card ? card.querySelector('.emoji-icon') : null;
+      if (icon) icon.classList.add('hidden');
+    }
+
+    // ===== TRANSLATIONS =====
+    const translations = {
+        en: {
+            navMap: "MAP", navPlaces: "PLACES", navFood: "FOOD", navCafes: "CAFES", navTrips: "DAY TRIPS", navGuide: "GUIDE",
+            badge: "DHARAN • KOSHI PROVINCE • NEPAL",
+            heroLine1: "Welcome to", heroLine2: "Dharan.",
+            heroDesc: "A practical guide to exploring the city — from Vijayapur's historic temples and local food to viewpoints, green trails, cafes, and day trips into the hills.",
+            btnMap: "Explore the map", btnGuide: "I'm visiting for the first time",
+            qnPlacesTitle: "Places", qnPlacesSub: "Where to go",
+            qnFoodTitle: "Food", qnFoodSub: "What to try",
+            qnTripsTitle: "Day Trips", qnTripsSub: "Beyond Dharan",
+            qnGuideTitle: "First Visit", qnGuideSub: "Start here",
+            mapEyebrow: "EXPLORE THE CITY", mapHeading: "Find your next stop.", mapDesc: "Explore the live map, or tap a place below to jump straight to it.",
+            introEnter: "Enter", mapCaptionDefault: "Dharan Overview", firstVisitToggle: "Visiting for the first time? See top picks", showOnMap: "Show on map", firstVisitPanelHeading: "Top picks for a first visit",
+            placesEyebrow: "PLACES WORTH YOUR TIME", placesHeading: "Start with these.", placesDesc: "A mix of heritage, culture, viewpoints, and nature.",
+            filterAll: "All", filterHeritage: "Heritage", filterNature: "Nature", filterLandmark: "Landmark",
+            place1Type: "HERITAGE", place1Name: "Budha Subba Temple", place1Desc: "One of Dharan's best-known religious and cultural landmarks, located in the historic Vijayapur area.",
+            place2Type: "HERITAGE", place2Name: "Dantakali Temple", place2Desc: "A major pilgrimage site on Vijayapur Hill. Nepal Tourism Board includes it among Dharan's important pilgrimage attractions.",
+            place3Type: "HERITAGE", place3Name: "Pindeshwar Temple", place3Desc: "A historic temple close to Dharan Bazaar, known especially for its religious importance during the month of Shrawan.",
+            place4Type: "NATURE", place4Name: "Panchakanya Temple", place4Desc: "A peaceful temple and green area on Vijayapur Hill. Good for a slower walk away from the busy centre.",
+            place5Type: "NATURE", place5Name: "Shiva Jatta", place5Desc: "A waterfall and nearby temple area north of the city. A good option when you want greenery rather than another urban stop.",
+            place6Type: "CITY LANDMARK", place6Name: "Dharan Clock Tower", place6Desc: "Right around the Bhanu Chowk area, this is an easy landmark to use when getting your bearings in central Dharan.",
+            openInMaps: "Open in Maps →",
+            foodEyebrow: "EAT LIKE A LOCAL", foodHeading: "Come hungry.", foodDesc: "Click any dish below to see top recommended places to eat it in Dharan.",
+            food1Title: "Sekuwa", food1Desc: "Charcoal-grilled meat is one of Dharan's signature food experiences. Bagarkot is particularly associated with Dharane-style sekuwa and Rai/Limbu food culture.",
+            food2Title: "Mo:Mo", food2Desc: "From simple local shops to busy evening food spots, momo is an easy first choice. Try a small plate before committing to a huge food crawl.",
+            food3Title: "Local Pork Dishes", food3Desc: "Dharan has a strong reputation for pork dishes and local Rai/Limbu-influenced flavours. Ask what the house specialty is instead of ordering blindly.",
+            food4Title: "Aalu Nimki & Street Snacks", food4Desc: "If you are exploring in the evening, leave room for smaller snacks. Street food is part of the fun — especially around busy market areas like Bhanu Chowk.",
+            foodTag: "SEE WHERE TO EAT →",
+            cafesEyebrow: "PLACES TO SIT & CHILL", cafesHeading: "Need a coffee break?", cafesDesc: "A few current local listings worth checking out around town.",
+            cafe1Desc: "Sampang Chowk area. Great environment to grab a drink or light meal.",
+            cafe2Desc: "Durga Chowk / Laxmi Marg area. A popular hangout for coffee and quick snacks.",
+            hoursLabel: "Listed hours:",
+            tripsEyebrow: "DAY TRIPS", tripsHeading: "Beyond Dharan.", tripsDesc: "Popular nearby hill stations and scenic getaways accessible within a short ride.",
+            trip1Label: "HILL STATION", trip1Name: "Bhedetar & Charles Tower", trip1Desc: "Located ~16 km uphill along the Koshi Highway. Known for cool weather, mist, and panoramic valley views.",
+            trip1Li1: "Viewpoint Tower", trip1Li2: "Cool Climate Break", trip1Li3: "Local Food Stalls",
+            trip2Label: "WATERFALL", trip2Name: "Namaste Waterfalls", trip2Desc: "A scenic cascading waterfall located en route to Bhedetar. Perfect for photography and short nature walks.",
+            trip2Li1: "80-meter Drop", trip2Li2: "Shaded Canyon Trail", trip2Li3: "Photo Spots",
+            trip3Label: "PANORAMA", trip3Name: "Namo Buddha / Vijayapur Ridge", trip3Desc: "The ridge line surrounding Vijayapur offers sunset views looking across the Terai plain and surrounding hills.",
+            trip3Li1: "Scenic Sunset Views", trip3Li2: "Temple Walk Route", trip3Li3: "Peaceful Atmosphere",
+            guideEyebrow: "FIRST VISIT GUIDE", guideHeading: "Start here.", guideDesc: "Practical tips to make your first trip to Dharan effortless.",
+            guide1Title: "Getting Around", guide1Desc: "<strong>Auto Rickshaws (Tuk-tuks)</strong> and local Safa Tempos are the primary way to move inside town. Always agree on the fare before hopping in if non-metered, or use local ride apps if available.",
+            guide2Title: "Best Time to Explore", guide2Desc: "Head to the <strong>Vijayapur Hill temples</strong> in the cooler morning hours. Save the late afternoon for <strong>Bhanu Chowk market walks</strong> and evening <strong>sekuwa in Bagarkot</strong>.",
+            footerText: "Crafted for explorers visiting <strong>Dharan, Nepal</strong>.",
+            mapsDirections: "Open Directions in Maps →"
+        },
+        ne: {
+            navMap: "नक्सा", navPlaces: "ठाउँहरू", navFood: "खाना", navCafes: "क्याफे", navTrips: "एक दिने यात्रा", navGuide: "गाइड",
+            badge: "धरान • कोशी प्रदेश • नेपाल",
+            heroLine1: "स्वागत छ", heroLine2: "धरानमा।",
+            heroDesc: "सहर घुम्नको लागि एउटा व्यावहारिक गाइड — विजयपुरका ऐतिहासिक मन्दिरहरू र स्थानीय खानादेखि दृश्यावलोकन स्थलहरू, हरियाली पैदल मार्गहरू, क्याफेहरू, र पहाडतिरको एक दिने यात्रासम्म।",
+            btnMap: "नक्सा हेर्नुहोस्", btnGuide: "म पहिलोपटक आउँदैछु",
+            qnPlacesTitle: "ठाउँहरू", qnPlacesSub: "कहाँ जाने",
+            qnFoodTitle: "खाना", qnFoodSub: "के खाने",
+            qnTripsTitle: "एक दिने यात्रा", qnTripsSub: "धरान बाहिर",
+            qnGuideTitle: "पहिलो भ्रमण", qnGuideSub: "यहाँबाट सुरु गर्नुहोस्",
+            mapEyebrow: "सहर अन्वेषण गर्नुहोस्", mapHeading: "आफ्नो अर्को गन्तव्य फेला पार्नुहोस्।", mapDesc: "प्रत्यक्ष नक्सा हेर्नुहोस्, वा तल कुनै ठाउँमा थिचेर सिधै त्यहाँ पुग्नुहोस्।",
+            introEnter: "प्रवेश गर्नुहोस्", mapCaptionDefault: "धरान — समग्र दृश्य", firstVisitToggle: "पहिलोपटक आउनुभएको हो? उत्तम ठाउँहरू हेर्नुहोस्", showOnMap: "नक्सामा हेर्नुहोस्", firstVisitPanelHeading: "पहिलो भ्रमणका लागि उत्तम ठाउँहरू",
+            placesEyebrow: "हेर्नै पर्ने ठाउँहरू", placesHeading: "यहाँबाट सुरु गर्नुहोस्।", placesDesc: "सम्पदा, संस्कृति, दृश्यावलोकन स्थल, र प्रकृतिको मिश्रण।",
+            filterAll: "सबै", filterHeritage: "सम्पदा", filterNature: "प्रकृति", filterLandmark: "चिन्ह",
+            place1Type: "सम्पदा", place1Name: "बुढासुब्बा मन्दिर", place1Desc: "धरानको सबैभन्दा चिनिने धार्मिक र सांस्कृतिक चिन्हहरू मध्ये एक, ऐतिहासिक विजयपुर क्षेत्रमा अवस्थित।",
+            place2Type: "सम्पदा", place2Name: "दन्तकाली मन्दिर", place2Desc: "विजयपुर डाँडामा रहेको एउटा प्रमुख तीर्थस्थल। नेपाल पर्यटन बोर्डले यसलाई धरानका महत्त्वपूर्ण तीर्थस्थलहरूमध्ये समावेश गरेको छ।",
+            place3Type: "सम्पदा", place3Name: "पिँडेश्वर मन्दिर", place3Desc: "धरान बजार नजिकैको ऐतिहासिक मन्दिर, विशेष गरी श्रावण महिनामा यसको धार्मिक महत्त्वका लागि परिचित।",
+            place4Type: "प्रकृति", place4Name: "पञ्चकन्या मन्दिर", place4Desc: "विजयपुर डाँडामा रहेको शान्त मन्दिर र हरियाली क्षेत्र। व्यस्त सहरबाट टाढा बिस्तारै हिँड्नको लागि उपयुक्त।",
+            place5Type: "प्रकृति", place5Name: "शिव जट्टा", place5Desc: "सहरको उत्तरतिर रहेको झरना र नजिकैको मन्दिर क्षेत्र। अर्को सहरी ठाउँको सट्टा हरियाली खोज्नेहरूका लागि राम्रो विकल्प।",
+            place6Type: "सहरको चिन्ह", place6Name: "धरान घडी टावर", place6Desc: "भानु चोक क्षेत्र वरिपरि रहेको, धरानको केन्द्रमा बाटो बुझ्नको लागि यो एउटा सजिलो चिन्ह हो।",
+            openInMaps: "नक्सामा हेर्नुहोस् →",
+            foodEyebrow: "स्थानीयजस्तै खानुहोस्", foodHeading: "भोकै आउनुहोस्।", foodDesc: "तल कुनै परिकारमा क्लिक गरेर धरानमा त्यो खान उत्कृष्ट ठाउँहरू हेर्नुहोस्।",
+            food1Title: "सेकुवा", food1Desc: "भुटेको (कोइलामा पोलेको) मासु धरानको एउटा विशेष स्वाद अनुभव हो। बागरकोट विशेष गरी धराने शैलीको सेकुवा र राई/लिम्बू खाना संस्कृतिसँग जोडिएको छ।",
+            food2Title: "मःम", food2Desc: "साधारण स्थानीय पसलदेखि साँझको भीडभाड हुने खाना ठाउँसम्म, मःम एउटा सजिलो पहिलो छनोट हो। ठूलो खाना यात्रा सुरु गर्नुअघि सानो प्लेट चाख्नुहोस्।",
+            food3Title: "स्थानीय सुँगुरको मासु", food3Desc: "धरान सुँगुरको मासुका परिकार र स्थानीय राई/लिम्बू स्वादका लागि चर्चित छ। अन्दाजमा अर्डर गर्नुभन्दा पसलको विशेष परिकार के हो सोध्नुहोस्।",
+            food4Title: "आलु निम्की र सडक खाजा", food4Desc: "साँझ घुम्दै गर्दा साना खाजाका लागि ठाउँ छाड्नुहोस्। सडक खाना रमाइलोको एक भाग हो — विशेष गरी भानु चोक जस्ता व्यस्त बजार क्षेत्रहरूमा।",
+            foodTag: "कहाँ खाने हेर्नुहोस् →",
+            cafesEyebrow: "बस्ने र आराम गर्ने ठाउँहरू", cafesHeading: "कफी ब्रेक चाहियो?", cafesDesc: "सहरभरि हेर्न लायक केही हालका स्थानीय ठाउँहरू।",
+            cafe1Desc: "सम्पाङ चोक क्षेत्र। पेय वा हल्का खाना खानको लागि राम्रो वातावरण।",
+            cafe2Desc: "दुर्गा चोक / लक्ष्मी मार्ग क्षेत्र। कफी र छिटो खाजाका लागि लोकप्रिय ठाउँ।",
+            hoursLabel: "खुल्ने समय:",
+            tripsEyebrow: "एक दिने यात्रा", tripsHeading: "धरान बाहिर।", tripsDesc: "छोटो सवारीमै पुग्न सकिने लोकप्रिय नजिकैका पहाडी स्थल र मनमोहक ठाउँहरू।",
+            trip1Label: "पहाडी स्थल", trip1Name: "भेडेटार र चार्ल्स टावर", trip1Desc: "कोशी राजमार्गसँगै करिब १६ किलोमिटर माथि अवस्थित। चिसो मौसम, कुहिरो, र फराकिलो उपत्यका दृश्यका लागि परिचित।",
+            trip1Li1: "दृश्यावलोकन धरहरा", trip1Li2: "चिसो मौसमको विश्राम", trip1Li3: "स्थानीय खाना पसलहरू",
+            trip2Label: "झरना", trip2Name: "नमस्ते झरना", trip2Desc: "भेडेटार जाने बाटोमा रहेको मनमोहक झरना। फोटोग्राफी र छोटो प्राकृतिक हिँडाइका लागि उत्तम।",
+            trip2Li1: "८० मिटर अग्लो", trip2Li2: "छहारी परेको उपत्यका मार्ग", trip2Li3: "फोटो खिच्ने ठाउँहरू",
+            trip3Label: "चौतर्फी दृश्य", trip3Name: "नमो बुद्ध / विजयपुर डाँडा", trip3Desc: "विजयपुर वरपरको डाँडाले तराई मैदान र वरपरका पहाडहरू देखिने सूर्यास्तको दृश्य प्रदान गर्छ।",
+            trip3Li1: "मनमोहक सूर्यास्त दृश्य", trip3Li2: "मन्दिर हिँडाइ मार्ग", trip3Li3: "शान्त वातावरण",
+            guideEyebrow: "पहिलो भ्रमण गाइड", guideHeading: "यहाँबाट सुरु गर्नुहोस्।", guideDesc: "धरानको तपाईंको पहिलो यात्रालाई सजिलो बनाउने व्यावहारिक सुझावहरू।",
+            guide1Title: "यातायात", guide1Desc: "<strong>अटो रिक्सा (टुकटुक)</strong> र स्थानीय सफा टेम्पो सहरभित्र सर्ने मुख्य माध्यम हुन्। मिटर नभएको भए चढ्नुअघि भाडामा सहमति गर्नुहोस्, वा उपलब्ध भए स्थानीय राइड एपहरू प्रयोग गर्नुहोस्।",
+            guide2Title: "घुम्ने उत्तम समय", guide2Desc: "बिहानको चिसो समयमा <strong>विजयपुर डाँडाका मन्दिरहरू</strong>तिर जानुहोस्। साँझपख <strong>भानु चोक बजार डुलेर</strong> र <strong>बागरकोटमा साँझको सेकुवा</strong>का लागि छुट्याउनुहोस्।",
+            footerText: "धरान, नेपाल घुम्न आउने यात्रुहरूका लागि बनाइएको।",
+            mapsDirections: "नक्सामा दिशा हेर्नुहोस् →"
+        }
+    };
+
+    // ===== PLACE DATA (bilingual) — powers the first-visit panel and the map =====
+    const locations = [
+        { name: {en:"Budha Subba Temple", ne:"बुढासुब्बा मन्दिर"}, type: {en:"Heritage", ne:"सम्पदा"}, coords: [26.8286, 87.2941], desc: {en:"Famous historical shrine in Vijayapur.", ne:"विजयपुरको प्रसिद्ध ऐतिहासिक मन्दिर।"}, query: "Budha+Subba+Temple+Dharan", img: "images/budha-subba-temple.jpg", icon: "🛕", featured: true },
+        { name: {en:"Dantakali Temple", ne:"दन्तकाली मन्दिर"}, type: {en:"Heritage", ne:"सम्पदा"}, coords: [26.8256, 87.2921], desc: {en:"Major pilgrimage site on Vijayapur Hill.", ne:"विजयपुर डाँडामा रहेको प्रमुख तीर्थस्थल।"}, query: "Dantakali+Temple+Dharan", img: "images/dantakali-temple.jpg", icon: "🔱", featured: true },
+        { name: {en:"Pindeshwar Temple", ne:"पिँडेश्वर मन्दिर"}, type: {en:"Heritage", ne:"सम्पदा"}, coords: [26.8185, 87.2845], desc: {en:"Historic temple near Dharan Bazaar.", ne:"धरान बजार नजिकैको ऐतिहासिक मन्दिर।"}, query: "Pindeshwar+Temple+Dharan", img: "images/pindeshwar-temple.jpg", icon: "🕉️", featured: true },
+        { name: {en:"Panchakanya Temple", ne:"पञ्चकन्या मन्दिर"}, type: {en:"Nature / Heritage", ne:"प्रकृति / सम्पदा"}, coords: [26.8230, 87.2910], desc: {en:"Peaceful temple and green walk area.", ne:"शान्त मन्दिर र हरियाली हिँडाइ क्षेत्र।"}, query: "Panchakanya+Temple+Dharan", img: "images/panchakanya-temple.jpg", icon: "🌿", featured: true },
+        { name: {en:"Shiva Jatta", ne:"शिव जट्टा"}, type: {en:"Nature", ne:"प्रकृति"}, coords: [26.8450, 87.2880], desc: {en:"Waterfall and temple area north of town.", ne:"सहरको उत्तरमा रहेको झरना र मन्दिर क्षेत्र।"}, query: "Shiva+Jatta+Dharan", img: "images/shiva-jatta.jpg", icon: "🌊" },
+        { name: {en:"Dharan Clock Tower", ne:"धरान घडी टावर"}, type: {en:"City Landmark", ne:"सहरको चिन्ह"}, coords: [26.8124, 87.2834], desc: {en:"Central hub in Bhanu Chowk.", ne:"भानु चोकको केन्द्रीय स्थान।"}, query: "Dharan+Clock+Tower", img: "images/dharan-clock-tower.jpg", icon: "🕰️", featured: true },
+        { name: {en:"Bagarkot (Sekuwa Hub)", ne:"बागरकोट (सेकुवा क्षेत्र)"}, type: {en:"Food Spot", ne:"खाना क्षेत्र"}, coords: [26.8160, 87.2880], desc: {en:"Dharan's famous evening sekuwa and Rai/Limbu food street.", ne:"धरानको प्रसिद्ध साँझको सेकुवा र राई/लिम्बू खाना गल्ली।"}, query: "Bagarkot+Dharan", icon: "🔥" },
+        { name: {en:"The Dharan Cafe and Restro", ne:"द धरान क्याफे एन्ड रेस्ट्रो"}, type: {en:"Cafe", ne:"क्याफे"}, coords: [26.8105, 87.2810], desc: {en:"Popular local cafe at Sampang Chowk.", ne:"सम्पाङ चोकको लोकप्रिय स्थानीय क्याफे।"}, query: "The+Dharan+Cafe+and+Restro", icon: "☕" },
+        { name: {en:"D Cafeteria", ne:"डी क्याफेटेरिया"}, type: {en:"Cafe", ne:"क्याफे"}, coords: [26.8090, 87.2850], desc: {en:"Coffee & snack spot at Durga Chowk.", ne:"दुर्गा चोकको कफी र खाजा ठाउँ।"}, query: "D+Cafeteria+Dharan", icon: "☕" },
+        { name: {en:"Bhedetar Viewpoint", ne:"भेडेटार दृश्यावलोकन स्थल"}, type: {en:"Day Trip", ne:"एक दिने यात्रा"}, coords: [26.8700, 87.3150], desc: {en:"Scenic hill station with Charles Tower view.", ne:"चार्ल्स टावर दृश्य भएको मनमोहक पहाडी स्थल।"}, query: "Bhedetar+Charles+Tower", img: "images/trip-bhedetar.jpg", icon: "🏔️", featured: true },
+        { name: {en:"Namaste Waterfalls", ne:"नमस्ते झरना"}, type: {en:"Day Trip", ne:"एक दिने यात्रा"}, coords: [26.8920, 87.3310], desc: {en:"Cascading 80m waterfall along the highway.", ne:"राजमार्गसँगैको ८० मिटर अग्लो झरना।"}, query: "Namaste+Waterfall+Bhedetar", icon: "🏔️" }
+    ];
+
+    // ===== FOOD MODAL DATA (bilingual) =====
+    const foodSpotData = {
+        sekuwa: {
+            title: {en:"🔥 Best Places for Dharane Sekuwa", ne:"🔥 धराने सेकुवाका लागि उत्तम ठाउँहरू"},
+            spots: [
+                { name: {en:"Bagarkot Sekuwa Hub", ne:"बागरकोट सेकुवा क्षेत्र"}, desc: {en:"The core culinary street in Dharan famous for authentic Rai/Limbu-style charcoal-grilled sekuwa.", ne:"प्रामाणिक राई/लिम्बू शैलीको कोइलामा पोलेको सेकुवाका लागि प्रसिद्ध धरानको मुख्य खाना गल्ली।"}, mapQuery: "Bagarkot+Dharan" },
+                { name: {en:"Lingbari Dharan", ne:"लिङबारी धरान"}, desc: {en:"Popular local spot offering outdoor dining with high-rated pork and chicken sekuwa.", ne:"उच्च मूल्याङ्कन पाएको सुँगुर र कुखुराको सेकुवा सहित बाहिरी भोजनको लोकप्रिय स्थानीय ठाउँ।"}, mapQuery: "Lingbari+Dharan" }
+            ]
+        },
+        momo: {
+            title: {en:"🥟 Best Places for Mo:Mo", ne:"🥟 मःमःका लागि उत्तम ठाउँहरू"},
+            spots: [
+                { name: {en:"Thamel Momo", ne:"थमेल मःम"}, desc: {en:"Famous central spot known for juicy buff, chicken, and pork momos.", ne:"रसिलो भैंसी, कुखुरा, र सुँगुरको मःमःका लागि परिचित केन्द्रीय ठाउँ।"}, mapQuery: "Thamel+Momo+Dharan" },
+                { name: {en:"Sasto Momo House", ne:"सस्तो मःम हाउस"}, desc: {en:"Well-loved eatery serving traditional steamed and jhol momos.", ne:"परम्परागत बाफमा पकाएको र झोल मःम पस्किने मनपर्ने भोजनालय।"}, mapQuery: "Sasto+Momo+House+Dharan" }
+            ]
+        },
+        pork: {
+            title: {en:"🥩 Best Places for Local Pork Dishes", ne:"🥩 स्थानीय सुँगुरको मासुका परिकारका लागि उत्तम ठाउँहरू"},
+            spots: [
+                { name: {en:"Bagarkot Local Eateries", ne:"बागरकोट स्थानीय भोजनालयहरू"}, desc: {en:"Top destination for traditional pork delicacies including Sekuwa, Sargemba, and Pork Sukuti.", ne:"सेकुवा, सर्गेम्बा, र सुँगुरको सुकुटी लगायत परम्परागत सुँगुरको मासुका परिकारका लागि प्रमुख गन्तव्य।"}, mapQuery: "Bagarkot+Dharan" },
+                { name: {en:"Nisane View Point & Restaurant", ne:"निसाने भ्यू प्वाइन्ट एन्ड रेस्टुरेन्ट"}, desc: {en:"Renowned locally for authentic pork thukpa and indigenous local preparations.", ne:"प्रामाणिक सुँगुरको थुक्पा र परम्परागत स्थानीय परिकारका लागि स्थानीय रूपमा चर्चित।"}, mapQuery: "Nisane+View+Point+Dharan" }
+            ]
+        },
+        snacks: {
+            title: {en:"🌶️ Best Street Food & Snack Spots", ne:"🌶️ उत्तम सडक खाना र खाजा ठाउँहरू"},
+            spots: [
+                { name: {en:"Bhanu Chowk Market", ne:"भानु चोक बजार"}, desc: {en:"The bustling city center with dozens of evening street food stalls offering Aalu Nimki and fried bites.", ne:"आलु निम्की र भुटेका खाजाहरू पस्किने दर्जनौं साँझको सडक खाना पसल भएको व्यस्त सहर केन्द्र।"}, mapQuery: "Bhanu+Chowk+Dharan" },
+                { name: {en:"Deshi Line", ne:"देशी लाइन"}, desc: {en:"Historic local food street packed with sweet shops, quick fast-food corners, and evening snacks.", ne:"मिठाई पसल, छिटो फास्ट-फुड कुना, र साँझको खाजाले भरिएको ऐतिहासिक स्थानीय खाना गल्ली।"}, mapQuery: "Deshi+Line+Dharan" }
+            ]
+        }
+    };
+
+    // ===== LANGUAGE ENGINE =====
+    function applyLanguage(lang) {
+        currentLang = lang;
+        try {
+            localStorage.setItem('dharan-lang', lang);
+        } catch (e) {
+            // storage blocked — language toggle still works for this session, just won't be remembered
+        }
+        document.documentElement.lang = lang === 'ne' ? 'ne' : 'en';
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[lang] && translations[lang][key] !== undefined) {
+                el.innerHTML = translations[lang][key];
+            }
+        });
+
+        document.getElementById('lang-toggle').textContent = lang === 'en' ? 'नेपाली' : 'English';
+
+        if (!selectedPlaceName) {
+            const capText = document.getElementById('map-caption-text');
+            if (capText) capText.textContent = translations[lang].mapCaptionDefault;
+        }
+
+        if (firstVisitOpen) {
+            renderFirstVisitPanel();
+        }
+
+        if (lastOpenedFoodCategory) {
+            showFoodSpots(lastOpenedFoodCategory, true);
+        }
+    }
+
+    function toggleLanguage() {
+        applyLanguage(currentLang === 'en' ? 'ne' : 'en');
+    }
+
+    // ===== LIVE MAP =====
+    // Uses Google's keyless embed (maps?...&output=embed) so no API key is
+    // required. Passing q=lat,lng(Label) drops a labelled pin and zooms in.
+    function focusMapOn(lat, lng, name, zoom) {
+        const frame = document.getElementById('google-map-frame');
+        if (!frame) return;
+        const z = zoom || 17;
+        frame.src = `https://www.google.com/maps?q=${lat},${lng}(${encodeURIComponent(name)})&z=${z}&output=embed`;
+
+        selectedPlaceName = name;
+        const capText = document.getElementById('map-caption-text');
+        if (capText) capText.textContent = name;
+
+        document.querySelectorAll('.mappable.is-selected').forEach(el => el.classList.remove('is-selected'));
+        document.querySelectorAll(`.mappable[data-name-en="${CSS.escape(name)}"]`).forEach(el => el.classList.add('is-selected'));
+
+        document.getElementById('map-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Delegated listener: works for the static cards AND for first-visit-panel
+    // cards that get (re)rendered later, with only one handler ever attached.
+    function initMappableCards() {
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('a')) return; // let "Open in Maps" links behave normally
+            const card = event.target.closest('.mappable');
+            if (!card) return;
+            const lat = card.dataset.lat, lng = card.dataset.lng;
+            if (!lat || !lng) return;
+            const name = currentLang === 'ne' ? card.dataset.nameNe : card.dataset.nameEn;
+            focusMapOn(lat, lng, name || card.dataset.nameEn);
+        });
+    }
+
+    // ===== FIRST-VISIT PANEL =====
+    function renderFirstVisitPanel() {
+        const panel = document.getElementById('first-visit-panel');
+        const featured = locations.filter(loc => loc.featured);
+        panel.innerHTML = featured.map(loc => `
+            <article class="fv-card mappable group overflow-hidden rounded-xl border border-hairline bg-white transition hover:border-moss"
+                     data-lat="${loc.coords[0]}" data-lng="${loc.coords[1]}"
+                     data-name-en="${loc.name.en}" data-name-ne="${loc.name.ne}">
+                <div class="hidden aspect-[16/10] overflow-hidden">
+                    <img src="${loc.img || ''}" alt="${loc.name[currentLang]}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onload="revealImage(this)" onerror="this.remove()">
+                </div>
+                <div class="p-6">
+                    <div class="emoji-icon mb-3 text-2xl">${loc.icon || '📍'}</div>
+                    <div class="text-[10px] tracking-[0.15em] text-moss">${loc.type[currentLang].toUpperCase()}</div>
+                    <h3 class="mt-1 font-serif text-lg">${loc.name[currentLang]}</h3>
+                    <p class="mt-2 text-[13px] leading-relaxed text-mist">${loc.desc[currentLang]}</p>
+                    <span class="mt-3 inline-block text-[12px] font-semibold text-moss group-hover:text-ink">📍 ${translations[currentLang].showOnMap} →</span>
+                </div>
+            </article>
+        `).join('');
+    }
+
+    function toggleFirstVisitPanel() {
+        const panel = document.getElementById('first-visit-panel');
+        firstVisitOpen = !firstVisitOpen;
+        if (firstVisitOpen) {
+            renderFirstVisitPanel();
+            panel.classList.remove('hidden');
+            panel.classList.add('is-open');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            panel.classList.add('hidden');
+            panel.classList.remove('is-open');
+        }
+    }
+
+    // ===== INTRO OVERLAY =====
+    function dismissIntro() {
+        const overlay = document.getElementById('intro-overlay');
+        if (!overlay || overlay.classList.contains('intro-hide')) return;
+        overlay.classList.add('intro-hide');
+        document.body.classList.remove('intro-lock');
+        setTimeout(() => overlay.remove(), 800);
+    }
+
+    function initIntro() {
+        const overlay = document.getElementById('intro-overlay');
+        if (!overlay) return;
+        document.getElementById('intro-enter').addEventListener('click', dismissIntro);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) dismissIntro(); });
+        // Auto-continue so the welcome moment never blocks a visitor who doesn't click.
+        const autoDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 900 : 4200;
+        setTimeout(dismissIntro, autoDelay);
+    }
+
+    // ===== PAGE INIT =====
+    document.addEventListener('DOMContentLoaded', function() {
+        initIntro();
+        initMappableCards();
+
+        document.getElementById('first-visit-toggle').addEventListener('click', toggleFirstVisitPanel);
+
+        // Filter chips
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const filter = chip.dataset.filter;
+                document.querySelectorAll('.place').forEach(place => {
+                    place.style.display = (filter === 'all' || place.dataset.category === filter) ? '' : 'none';
+                });
+            });
+        });
+
+        // Apply saved / default language on load
+        applyLanguage(currentLang);
+    });
+
+    // ===== FOOD MODAL =====
+    function showFoodSpots(category, isRefresh) {
+        const data = foodSpotData[category];
+        if (!data) return;
+        lastOpenedFoodCategory = category;
+
+        document.getElementById('modal-food-title').innerText = data.title[currentLang];
+        const listContainer = document.getElementById('modal-food-list');
+        listContainer.innerHTML = '';
+
+        data.spots.forEach(spot => {
+            const itemHTML = `
+                <div class="mt-4 rounded-xl border border-hairline bg-sand p-4">
+                    <h4 class="font-serif text-base text-moss">${spot.name[currentLang]}</h4>
+                    <p class="mt-1 text-[12px] leading-relaxed text-mist">${spot.desc[currentLang]}</p>
+                    <a class="mt-2 inline-block text-[12px] font-semibold text-moss hover:text-ink" href="https://www.google.com/maps/search/?api=1&query=${spot.mapQuery}" target="_blank">${translations[currentLang].mapsDirections}</a>
+                </div>
+            `;
+            listContainer.innerHTML += itemHTML;
+        });
+
+        if (!isRefresh) {
+            const modal = document.getElementById('food-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    }
+
+    function closeFoodModal() {
+        const modal = document.getElementById('food-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        lastOpenedFoodCategory = null;
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('food-modal');
+        if (event.target == modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            lastOpenedFoodCategory = null;
+        }
+    }
+  </script>
+</body>
+</html>

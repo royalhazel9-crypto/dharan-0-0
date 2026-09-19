@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: "dharan-explorer-nginx"
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

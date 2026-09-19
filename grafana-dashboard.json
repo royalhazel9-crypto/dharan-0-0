@@ -1,0 +1,41 @@
+{
+  "title": "Dharan Explorer — nginx",
+  "uid": "dharan-explorer-nginx",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Up",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "expr": "nginx_up{job=\"dharan-explorer-nginx\"}" }]
+    },
+    {
+      "id": 2,
+      "title": "Active connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [{ "expr": "nginx_connections_active{job=\"dharan-explorer-nginx\"}" }]
+    },
+    {
+      "id": 3,
+      "title": "Requests total (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [{ "expr": "rate(nginx_http_requests_total{job=\"dharan-explorer-nginx\"}[5m])" }]
+    },
+    {
+      "id": 4,
+      "title": "Accepted vs handled connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "rate(nginx_connections_accepted{job=\"dharan-explorer-nginx\"}[5m])", "legendFormat": "accepted" },
+        { "expr": "rate(nginx_connections_handled{job=\"dharan-explorer-nginx\"}[5m])", "legendFormat": "handled" }
+      ]
+    }
+  ]
+}
