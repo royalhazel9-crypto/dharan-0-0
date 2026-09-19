@@ -1,0 +1,25 @@
+{
+  "name": "dharan-explorer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dharan Explorer static site — production build pipeline",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:css": "tailwindcss -i ./src/input.css -o ./dist/assets/style.css --minify",
+    "build:html": "node scripts/build-html.js",
+    "build:assets": "node scripts/copy-assets.js",
+    "build": "npm run clean && mkdir -p dist/assets && npm run build:css && npm run build:html && npm run build:assets",
+    "lint": "htmlhint \"src/**/*.html\"",
+    "dev": "http-server src -p 8000 -c-1",
+    "serve:dist": "http-server dist -p 8000 -c-1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.13",
+    "html-minifier-terser": "^7.2.0",
+    "htmlhint": "^1.1.4",
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
